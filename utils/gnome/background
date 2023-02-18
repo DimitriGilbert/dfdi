@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "Setting background to $1";
+_bn=$(basename "$1");
+if [ ! -d "$HOME/Pictures/wallpapers" ]; then
+  mkdir "$HOME/Pictures/wallpapers";
+fi
+if [ ! -f "$HOME/Pictures/wallpapers/$_bn" ]; then
+  cp "$1" "$HOME/Pictures/wallpapers/$_bn";
+fi
+gsettings set org.gnome.desktop.background picture-uri "$HOME/Pictures/wallpapers/$_bn";
+gsettings set org.gnome.desktop.background picture-uri-dark "$HOME/Pictures/wallpapers/$_bn";

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+sudo ./dfdi \
+  "$USER" \
+  --dnf-repo "https://download.docker.com/linux/fedora/docker-ce.repo" \
+  --dnf-list "./assets/dnf.lst" \
+  --flatpak-list "./assets/fp.lst" \
+  -e "./utils/hardware-acceleration" \
+  -e "./utils/vscode" \
+  -e "./utils/webapp-manager" \
+  -e "./utils/sublime-text" \
+  -e "./utils/gnome/gdm-wallpaper ./assets/miri_pillars.jpg" \
+  -e "chsh -s /usr/bin/zsh $USER";
+./utils/gnome/extensions-manager 1160 744 3010 615 277 1116;
+./utils/gnome/background ./assets/carina_nebula.jpg;
+./utils/gnome/settings;

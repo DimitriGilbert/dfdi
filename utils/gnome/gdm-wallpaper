@@ -1,0 +1,7 @@
+#!/bin/bash
+if ! command -v set-gdm-wallpaper &>/dev/null ; then
+  echo "intalling gdm-wallpaper";
+  sudo dnf copr enable zirix/gdm-wallpaper -y;
+  sudo dnf install gdm-wallpaper -y;
+fi
+sudo set-gdm-wallpaper "$1";

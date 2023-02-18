@@ -1,0 +1,4 @@
+#!/bin/bash
+echo "Installing Webapp Manager";
+sudo dnf copr enable refi64/webapp-manager -y;
+sudo dnf install webapp-manager -y;

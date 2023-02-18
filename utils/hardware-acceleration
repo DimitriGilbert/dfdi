@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "install hardware acceleration with mesa freeworld";
+
+# sudo dnf swap --enablerepo=rpmfusion-free-updates-testing mesa-va-drivers mesa-va-drivers-freeworld -y;
+sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld -y;

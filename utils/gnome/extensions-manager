@@ -1,0 +1,12 @@
+#!/bin/bash
+if ! command -v gnome-shell-extension-installer &>/dev/null ; then
+  echo "Installing Gnome Shell Extension Installer";
+  wget -O gnome-shell-extension-installer "https://github.com/brunelli/gnome-shell-extension-installer/raw/master/gnome-shell-extension-installer";
+  sudo mv gnome-shell-extension-installer /usr/bin/;
+  sudo chmod +x /usr/bin/gnome-shell-extension-installer;
+fi
+
+if command -v gnome-shell-extension-installer &>/dev/null ; then
+  echo -e "Installing Gnome Shell Extensions :\n\t$*";
+  gnome-shell-extension-installer --restart-shell "$@";
+fi

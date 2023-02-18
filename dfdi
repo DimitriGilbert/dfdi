@@ -1,0 +1,360 @@
+#!/bin/bash
+# @parseArger-begin
+# @parseArger-help "I send an SOS to the world" --option "help" --short-option "h"
+# @parseArger-declarations
+# @parseArger pos user "installing user"
+# @parseArger opt dnf-p-dl "parrallel download" --default-value "10"
+# @parseArger opt dnf-install "install using dnf" --repeat
+# @parseArger opt dnf-repo "install dnf repository" --repeat
+# @parseArger opt flatpak-install "install using flatpak" --repeat
+# @parseArger opt flatpak-repo "add flatpak repo" --repeat
+# @parseArger opt dnf-list "dnf install package list file" --repeat
+# @parseArger opt flatpak-list "flatpak install list" --repeat
+# @parseArger opt execute "command to execute" --short e --repeat
+# @parseArger opt execute-before "command to execute before" --short b --repeat
+# @parseArger flag dnf-fastest "set fastest mirror rules" --on
+# @parseArger flag rpm-fusion "enables rpm fusion" --on
+# @parseArger flag flathub "enables flathub" --on
+# @parseArger flag media-codec "install media codec" --on
+# @parseArger-declarations-end
+
+# @parseArger-parsing
+die()
+{
+	local _ret="${2:-1}"
+	test "${_PRINT_HELP:-no}" = yes && print_help >&2
+	echo "$1" >&2
+	exit "${_ret}"
+}
+
+
+begins_with_short_option()
+{
+	local first_option all_short_options=''
+	first_option="${1:0:1}"
+	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
+}
+
+# POSITIONALS ARGUMENTS
+_positionals=();
+_arg_user="";
+# OPTIONALS ARGUMENTS
+_arg_dnf_p_dl="10"
+_arg_dnf_install=()
+_arg_dnf_repo=()
+_arg_flatpak_install=()
+_arg_flatpak_repo=()
+_arg_dnf_list=()
+_arg_flatpak_list=()
+_arg_execute=()
+_arg_execute_before=()
+# FLAGS
+_arg_dnf_fastest="on"
+_arg_rpm_fusion="on"
+_arg_flathub="on"
+_arg_media_codec="on"
+
+
+print_help()
+{
+	echo -e "I send an SOS to the world:"
+	echo -e "	user: installing user"
+	echo -e "	--dnf-p-dl <dnf-p-dl>: parrallel download [default: ' 10 ']"
+	echo -e "	--dnf-install <dnf-install>: install using dnf, repeatable"
+	echo -e "	--dnf-repo <dnf-repo>: install dnf repository, repeatable"
+	echo -e "	--flatpak-install <flatpak-install>: install using flatpak, repeatable"
+	echo -e "	--flatpak-repo <flatpak-repo>: add flatpak repo, repeatable"
+	echo -e "	--dnf-list <dnf-list>: dnf install package list file, repeatable"
+	echo -e "	--flatpak-list <flatpak-list>: flatpak install list, repeatable"
+	echo -e "	-e, --execute <execute>: command to execute, repeatable"
+	echo -e "	-b, --execute-before <execute-before>: command to execute before, repeatable"
+	echo -e "	--dnf-fastest|--no-dnf-fastest: set fastest mirror rules, on by default (use --no-dnf-fastest to turn it off)"
+	echo -e "	--rpm-fusion|--no-rpm-fusion: enables rpm fusion, on by default (use --no-rpm-fusion to turn it off)"
+	echo -e "	--flathub|--no-flathub: enables flathub, on by default (use --no-flathub to turn it off)"
+	echo -e "	--media-codec|--no-media-codec: install media codec, on by default (use --no-media-codec to turn it off)"
+	echo -e "Usage :
+	$0 <user> [--dnf-p-dl <value>] [--dnf-install <value>] [--dnf-repo <value>] [--flatpak-install <value>] [--flatpak-repo <value>] [--dnf-list <value>] [--flatpak-list <value>] [--execute <value>] [--execute-before <value>] [--[no-]dnf-fastest] [--[no-]rpm-fusion] [--[no-]flathub] [--[no-]media-codec]"
+}
+
+parse_commandline()
+{
+	_positionals_count=0
+	while test $# -gt 0
+	do
+		_key="$1"
+		case "$_key" in
+			--dnf-p-dl)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_dnf_p_dl="$2"
+				shift
+				;;
+			--dnf-p-dl=*)
+				_arg_dnf_p_dl="${_key##--dnf-p-dl=}"
+				;;
+			
+			--dnf-install)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_dnf_install+=("$2")
+				shift
+				;;
+			--dnf-install=*)
+				_arg_dnf_install+=("${_key##--dnf-install=}")
+				;;
+			
+			--dnf-repo)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_dnf_repo+=("$2")
+				shift
+				;;
+			--dnf-repo=*)
+				_arg_dnf_repo+=("${_key##--dnf-repo=}")
+				;;
+			
+			--flatpak-install)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_flatpak_install+=("$2")
+				shift
+				;;
+			--flatpak-install=*)
+				_arg_flatpak_install+=("${_key##--flatpak-install=}")
+				;;
+			
+			--flatpak-repo)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_flatpak_repo+=("$2")
+				shift
+				;;
+			--flatpak-repo=*)
+				_arg_flatpak_repo+=("${_key##--flatpak-repo=}")
+				;;
+			
+			--dnf-list)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_dnf_list+=("$2")
+				shift
+				;;
+			--dnf-list=*)
+				_arg_dnf_list+=("${_key##--dnf-list=}")
+				;;
+			
+			--flatpak-list)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_flatpak_list+=("$2")
+				shift
+				;;
+			--flatpak-list=*)
+				_arg_flatpak_list+=("${_key##--flatpak-list=}")
+				;;
+			
+			-e|--execute)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_execute+=("$2")
+				shift
+				;;
+			--execute=*)
+				_arg_execute+=("${_key##--execute=}")
+				;;
+			-e*)
+				_arg_execute+=("${_key##-e}")
+				;;
+			
+			-b|--execute-before)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_execute_before+=("$2")
+				shift
+				;;
+			--execute-before=*)
+				_arg_execute_before+=("${_key##--execute-before=}")
+				;;
+			-b*)
+				_arg_execute_before+=("${_key##-b}")
+				;;
+			
+			--no-dnf-fastest|--dnf-fastest)
+				_arg_dnf_fastest="on"
+				test "${1:0:5}" = "--no-" && _arg_dnf_fastest="off"
+				;;
+			--no-rpm-fusion|--rpm-fusion)
+				_arg_rpm_fusion="on"
+				test "${1:0:5}" = "--no-" && _arg_rpm_fusion="off"
+				;;
+			--no-flathub|--flathub)
+				_arg_flathub="on"
+				test "${1:0:5}" = "--no-" && _arg_flathub="off"
+				;;
+			--no-media-codec|--media-codec)
+				_arg_media_codec="on"
+				test "${1:0:5}" = "--no-" && _arg_media_codec="off"
+				;;
+			-h|--help)
+				print_help;
+				exit 0;
+				;;
+			-h*)
+				print_help;
+				exit 0;
+				;;
+			*)
+				_last_positional="$1"
+				_positionals+=("$_last_positional")
+				_positionals_count=$((_positionals_count + 1))
+				;;
+		esac
+		shift
+	done
+}
+
+
+handle_passed_args_count()
+{
+	local _required_args_string="user"
+	test "${_positionals_count}" -le 1 || _PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 1 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}')." 1
+	test "${_positionals_count}" -ge 1 || _PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 1 (namely: $_required_args_string), but got only ${_positionals_count}." 1
+}
+
+
+assign_positional_args()
+{
+	local _positional_name _shift_for=$1;
+	_positional_names="_arg_user ";
+	shift "$_shift_for"
+	for _positional_name in ${_positional_names};do
+		test $# -gt 0 || break;
+		eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1
+eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an Argbash bug." 1;
+		shift;
+	done
+}
+
+print_debug()
+{
+	print_help
+	# shellcheck disable=SC2145
+	echo "DEBUG: $0 $@";
+	
+	echo -e "\tuser: ${_arg_user}";
+	echo -e "\tdnf-p-dl: ${_arg_dnf-p-dl | sed 's/-/_/g'}";
+	echo -e "\tdnf-install: ${_arg_dnf-install | sed 's/-/_/g'}";
+	echo -e "\tdnf-repo: ${_arg_dnf-repo | sed 's/-/_/g'}";
+	echo -e "\tflatpak-install: ${_arg_flatpak-install | sed 's/-/_/g'}";
+	echo -e "\tflatpak-repo: ${_arg_flatpak-repo | sed 's/-/_/g'}";
+	echo -e "\tdnf-list: ${_arg_dnf-list | sed 's/-/_/g'}";
+	echo -e "\tflatpak-list: ${_arg_flatpak-list | sed 's/-/_/g'}";
+	echo -e "\texecute: ${_arg_execute | sed 's/-/_/g'}";
+	echo -e "\texecute-before: ${_arg_execute-before | sed 's/-/_/g'}";
+	echo -e "\tdnf-fastest: ${_arg_dnf-fastest | sed 's/-/_/g'}";
+	echo -e "\trpm-fusion: ${_arg_rpm-fusion | sed 's/-/_/g'}";
+	echo -e "\tflathub: ${_arg_flathub | sed 's/-/_/g'}";
+	echo -e "\tmedia-codec: ${_arg_media-codec | sed 's/-/_/g'}";
+
+}
+
+parse_commandline "$@"
+handle_passed_args_count
+assign_positional_args 1 "${_positionals[@]}"
+
+# @parseArger-parsing-end
+# print_debug "$@"
+# @parseArger-end
+
+echo -e "Starting install \n"
+
+if [ "$_arg_dnf_p_dl" != "" ]; then
+  echo -e "setting max parralel dl\n"
+	echo "max_parallel_downloads=${_arg_dnf_p_dl}" | sudo tee -a /etc/dnf/dnf.conf > /dev/null;
+fi
+
+if [ "$_arg_dnf_fastest" = "on" ]; then
+  echo -e "selecting dnf mirror\n"
+	echo -e "fastestmirror=true\ndeltarpm=true" | sudo tee -a /etc/dnf/dnf.conf > /dev/null;
+fi
+
+if [ "$_arg_rpm_fusion" = "on" ]; then
+  echo -e "enabeling rpm fusion\n"
+	sudo dnf install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm" -y;
+fi
+
+echo -e "refreshing dnf repos\n"
+sudo dnf upgrade --refresh -y;
+
+sudo dnf -y install dnf-plugins-core;
+
+if [ "${#_arg_execute_before[@]}" -gt 0 ]; then
+  echo -e "execute before\n"
+	for exB in "${_arg_execute_before[@]}"; do
+		$exB;
+	done
+fi
+
+if [ "$_arg_flathub" = "on" ]; then
+  echo -e "adding flathub\n"
+	sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo;
+fi
+
+if [ "${#_arg_dnf_repo[@]}" -gt 0 ]; then
+  echo -e "adding repos\n"
+	for ri in "${_arg_dnf_repo[@]}"; do
+		sudo dnf config-manager --add-repo "${ri}" -y;
+	done
+fi
+
+if [ "${#_arg_flatpak_repo[@]}" -gt 0 ]; then
+  echo -e "adding flatpak repo\n"
+	for rfi in "${_arg_flatpak_repo[@]}"; do
+		# I want it to split "repo_name repo_url"
+		# shellcheck disable=SC2086
+		sudo flatpak remote-add --if-not-exists $rfi;
+	done
+fi
+
+if [ "$_arg_media_codec" = "on" ]; then
+  echo -e "installing codecs\n"
+	sudo dnf install \
+		gstreamer1-plugins-{bad-\*,good-\*,base} \
+		gstreamer1-plugin-openh264 \
+		gstreamer1-libav \
+		lame\* \
+		--exclude=gstreamer1-plugins-bad-free-devel \
+		--exclude=lame-devel \
+		-y;
+
+	sudo dnf group upgrade --with-optional Multimedia;
+fi
+
+if [ "${#_arg_dnf_install[@]}" -gt 0 ]; then
+  echo -e "extra dnf install\n"
+	for ii in "${_arg_dnf_install[@]}"; do
+		sudo dnf install -y "${ii}";
+	done
+fi
+
+if [ "${#_arg_flatpak_install[@]}" -gt 0 ]; then
+  echo -e "extra flatpak install\n"
+	for fii in "${_arg_flatpak_install[@]}"; do
+		# I want it to split "repo_name appid"
+		# shellcheck disable=SC2086
+		sudo -u "$_arg_user" flatpak install -y $fii;
+	done
+fi
+
+if [ "${#_arg_dnf_list[@]}" -gt 0 ]; then
+  echo -e "dnf package list install\n"
+	for ffii in "${_arg_dnf_list[@]}"; do
+		readarray -t tmp_fpkg_lst < "${ffii}";
+		sudo dnf install -y "${tmp_fpkg_lst[@]}";
+	done
+fi
+if [ "${#_arg_flatpak_list[@]}" -gt 0 ]; then
+  echo -e "flatpak package list install\n"
+	for ffii in "${_arg_flatpak_list[@]}"; do
+		readarray -t tmp_fpkg_lst < "${ffii}";
+		sudo -u "$_arg_user" flatpak install -y "${tmp_fpkg_lst[@]}";
+	done
+fi
+
+if [ "${#_arg_execute[@]}" -gt 0 ]; then
+  echo -e "post execute\n"
+	for ex in "${_arg_execute[@]}"; do
+		$ex;
+	done
+fi
