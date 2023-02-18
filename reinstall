@@ -9,6 +9,7 @@ sudo ./dfdi \
   -e "./utils/vscode" \
   -e "./utils/webapp-manager" \
   -e "./utils/sublime-text" \
+  -e "./utils/brave" \
   -e "./utils/gnome/gdm-wallpaper ./assets/miri_pillars.jpg" \
   -e "chsh -s /usr/bin/zsh $USER";
 ./utils/gnome/extensions-manager 1160 744 3010 615 277 1116;
